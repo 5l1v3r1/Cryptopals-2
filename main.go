@@ -3,47 +3,89 @@ package main
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
+	"errors"
 )
 
-func main() {
-	first()
-	second()
+func HexToBase64(hex_string string) (string, error) {
+	buf, err := hex.DecodeString(hex_string)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(buf), nil
 }
 
-func second() {
-	a_hex := "1c0111001f010100061a024b53535009181c"
-	b_hex := "686974207468652062756c6c277320657965"
-
-	a, err := hex.DecodeString(a_hex)
-	if err != nil {
-		fmt.Printf("Some error: %v", err)
-		return
+func XOR(buf1, buf2 []byte) ([]byte, error) {
+	if len(buf1) != len(buf2) {
+		return nil, errors.New("XOR: slices must be equal size")
 	}
-
-	b, err := hex.DecodeString(b_hex)
-	if err != nil {
-		fmt.Printf("Some error: %v", err)
-		return
+	out := make([]byte, len(buf1))
+	for i, b := range buf1 {
+		out[i] = b ^ buf2[i]
 	}
-
-	n := len(a)
-	c := make([]byte, n)
-	for i := 0; i < n; i++ {
-		c[i] = a[i] ^ b[i]
-	}
-	c_hex := hex.EncodeToString(c)
-	fmt.Printf("a: %s\nb: %s\nc: %s\n", a_hex, b_hex, c_hex)
+	return out, nil
 }
 
-func first() {
-	hex_string := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-	bytes, err := hex.DecodeString(hex_string)
-	if err != nil {
-		fmt.Printf("Some error: %v", err)
-		return
+// Buf will be XOR'd with key with repeating key if necessary.
+func RepeatingXOR(buf, key []byte) []byte {
+	if len(key) == 0 {
+		return buf
 	}
-	b64 := base64.StdEncoding.EncodeToString(bytes)
-	fmt.Printf("Hex String: %s\n", hex_string)
-	fmt.Printf("Base64 String: %s\n", b64)
+	div := len(buf) / len(key)
+	rem := len(buf) % len(key)
+
+	rkey := make([]byte, len(buf))
+	for i := 0; i < div; i++ {
+		for j := 0; j < len(key); j++ {
+			rkey[len(key)*i+j] = key[j]
+		}
+	}
+	for i := 0; i < rem; i++ {
+		rkey[len(key)*div+i] = key[i]
+	}
+
+	// Won't have error as both inputs will be equal length
+	res, _ := XOR(buf, rkey)
+	return res
+}
+
+func SingleCharOracle(ct []byte) string {
+	keyspace := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	results := make(map[string]string)
+
+	for i := 0; i < len(keyspace); i++ {
+		k := keyspace[i]
+		results[string(k)] = string(RepeatingXOR(ct, []byte{k}))
+	}
+
+	highscore := 0
+	highkey := ""
+	for k, res := range results {
+		score := PtScore(res)
+		if score > highscore {
+			highscore = score
+			highkey = k
+		}
+	}
+	return highkey
+}
+
+// Plaintext scoring algorithm
+func PtScore(pt string) int {
+	score := 0
+	for _, c := range pt {
+		// A-Z
+		if c >= 65 && c <= 90 {
+			score++
+		}
+		// a-z
+		if c >= 97 && c <= 122 {
+			score++
+		}
+		// non-printable
+		if c < 32 || c == 127 {
+			score--
+		}
+	}
+	return score
 }
