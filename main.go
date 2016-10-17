@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 )
@@ -85,6 +87,68 @@ func PtScore(pt string) int {
 		// non-printable
 		if c < 32 || c == 127 {
 			score--
+		}
+	}
+	return score
+}
+
+// Takes two byte slices and computes the hammind distance of their bits.
+// If one slice is shorter than the other, the shorter will be extended with 0s.
+func Hamming(buf1, buf2 []byte) int {
+	score := 0
+
+	// Make both buffers same size padded by 0s
+	if len(buf1) > len(buf2) {
+		dif := len(buf1) - len(buf2)
+		new_buf := make([]byte, len(buf2)+dif)
+		for i, b := range buf2 {
+			new_buf[i] = b
+		}
+		buf2 = new_buf
+	} else if len(buf1) < len(buf2) {
+		dif := len(buf2) - len(buf1)
+		new_buf := make([]byte, len(buf1)+dif)
+		for i, b := range buf1 {
+			new_buf[i] = b
+		}
+		buf1 = new_buf
+	}
+
+	// I'm glad I remember my bitwise math from college
+	for i, b := range buf1 {
+		x := b ^ buf2[i]
+		d, _ := binary.ReadUvarint(bytes.NewReader([]byte{x}))
+		if d >= 128 {
+			score++
+			d = d - 128
+		}
+		if d >= 64 {
+			score++
+			d = d - 64
+		}
+		if d >= 32 {
+			score++
+			d = d - 32
+		}
+		if d >= 16 {
+			score++
+			d = d - 16
+		}
+		if d >= 8 {
+			score++
+			d = d - 8
+		}
+		if d >= 4 {
+			score++
+			d = d - 4
+		}
+		if d >= 2 {
+			score++
+			d = d - 2
+		}
+		if d >= 1 {
+			score++
+			d = d - 1
 		}
 	}
 	return score

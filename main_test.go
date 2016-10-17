@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/hex"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -67,5 +69,25 @@ func TestSingleCharOracle(t *testing.T) {
 	expected := "Cooking MC's like a pound of bacon"
 	if string(pt) != expected {
 		t.Errorf("Did not get expected result from SingleCharOracle: \n%s vs. \n%s", pt, expected)
+	}
+}
+
+func TestRepeatingKeyOracle(t *testing.T) {
+	file, err := os.Open("challenge6.txt") // For read access.
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	_, err = ioutil.ReadAll(file)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+}
+
+func TestHamming(t *testing.T) {
+	buf1 := []byte("this is a test")
+	buf2 := []byte("wokka wokka!!!")
+	dis := Hamming(buf1, buf2)
+	if dis != 37 {
+		t.Errorf("Expected hamming distance is 37. Got %d", dis)
 	}
 }
