@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
+	//	"strconv"
 	"strings"
 )
 
@@ -173,16 +173,23 @@ func Hamming(buf1, buf2 []byte) int {
 	return score
 }
 
-func RepeatingKeyOracle(ct []byte) (pt []byte) {
+func KeySizeOracle(ct []byte) int {
 	results := make(map[int]float64)
+
 	for ks := 2; ks <= 40; ks++ {
-		a, b := ct[:ks], ct[ks:ks*2]
-		c, d := ct[ks*2:ks*3], ct[ks*3:ks*4]
-		dif := float64(Hamming(a, b)) / float64(ks)
-		dif2 := float64(Hamming(c, d)) / float64(ks)
-		dif = (dif + dif2) / 2
-		fmt.Printf("Hamming: %f\n", dif)
+
+		div := len(ct) / ks
+		div = div - 2
+		tot := 0.0
+		for i := 0; i < div; i++ {
+			a, b := ct[ks*i:ks*(i+1)], ct[ks*(i+1):ks*(i+2)]
+			tot = tot + float64(Hamming(a, b))/float64(ks)
+		}
+		dif := tot / float64(div)
+
+		//fmt.Printf("KS: %d, res: %f\n", ks, dif)
 		results[ks] = dif
+
 	}
 
 	low := 999.9
@@ -197,6 +204,12 @@ func RepeatingKeyOracle(ct []byte) (pt []byte) {
 
 	ks := lowks
 	fmt.Printf("Keysize: %d\n", ks)
+
+	return ks
+}
+
+func RepeatingKeyOracle(ct []byte) (pt []byte) {
+	ks := KeySizeOracle(ct)
 
 	blocks := make([][]byte, 0)
 	div := len(ct) / ks
@@ -213,7 +226,7 @@ func RepeatingKeyOracle(ct []byte) (pt []byte) {
 	fmt.Printf("Blocks %d\n", len(blocks))
 
 	var key string
-	for i, block := range blocks {
+	for _, block := range blocks {
 		c := SingleCharOracle(block)
 		key = key + c
 		//fmt.Printf("Block %d decrypted: %s\n", i, strconv.Quote(string(RepeatingXOR(block, []byte(c)))))

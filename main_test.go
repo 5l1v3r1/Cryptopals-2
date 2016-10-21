@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 )
 
@@ -84,7 +85,7 @@ func TestRepeatingKeyOracle(t *testing.T) {
 	}
 	data, _ := base64.StdEncoding.DecodeString(string(ct))
 	out := RepeatingKeyOracle(data)
-	//t.Logf("%s", out)
+	t.Logf("%s", strconv.Quote(string(out)))
 }
 
 func TestHamming(t *testing.T) {
