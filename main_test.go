@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"io/ioutil"
 	"os"
@@ -77,10 +78,13 @@ func TestRepeatingKeyOracle(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	_, err = ioutil.ReadAll(file)
+	ct, err := ioutil.ReadAll(file)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	data, _ := base64.StdEncoding.DecodeString(string(ct))
+	out := RepeatingKeyOracle(data)
+	//t.Logf("%s", out)
 }
 
 func TestHamming(t *testing.T) {
