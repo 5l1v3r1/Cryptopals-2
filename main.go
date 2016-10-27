@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	//	"strconv"
+	"strconv"
 	"strings"
 )
 
@@ -55,7 +55,7 @@ func RepeatingXOR(buf, key []byte) []byte {
 }
 
 func SingleCharOracle(ct []byte) string {
-	keyspace := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	keyspace := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+-=[]{};:'\",./<>?`~ "
 	results := make(map[string]string)
 
 	for i := 0; i < len(keyspace); i++ {
@@ -96,7 +96,16 @@ func PtScore(pt string) float64 {
 		} else {
 			ignored++
 		}
-		if c >= 0 && c <= 7 {
+		if c >= 0 && c <= 8 {
+			return 99999999
+		}
+		if c >= 11 && c <= 13 {
+			return 99999999
+		}
+		if c >= 14 && c <= 31 {
+			return 99999999
+		}
+		if c == 127 {
 			return 99999999
 		}
 	}
@@ -226,10 +235,12 @@ func RepeatingKeyOracle(ct []byte) (pt []byte) {
 	fmt.Printf("Blocks %d\n", len(blocks))
 
 	var key string
-	for _, block := range blocks {
+	for i, block := range blocks {
 		c := SingleCharOracle(block)
 		key = key + c
-		//fmt.Printf("Block %d decrypted: %s\n", i, strconv.Quote(string(RepeatingXOR(block, []byte(c)))))
+		if i == 24 {
+			fmt.Printf("Block %d decrypted with %s: %s\n", i, c, strconv.Quote(string(RepeatingXOR(block, []byte(c)))))
+		}
 	}
 	fmt.Printf("Key: %s", key)
 	return RepeatingXOR(ct, []byte(key))
