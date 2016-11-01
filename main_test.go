@@ -96,3 +96,19 @@ func TestHamming(t *testing.T) {
 		t.Errorf("Expected hamming distance is 37. Got %d", dis)
 	}
 }
+
+func TestECBDecrypt(t *testing.T) {
+	file, err := os.Open("challenge7.txt") // For read access.
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	ct, err := ioutil.ReadAll(file)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	t.Logf("%s\n", string(ct))
+	data, _ := base64.StdEncoding.DecodeString(string(ct))
+	key := []byte("YELLOW SUBMARINE")
+	pt, _ := ECBDecrypt(key, data)
+	t.Logf("%s\n", string(pt))
+}

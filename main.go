@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/aes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -244,4 +245,38 @@ func RepeatingKeyOracle(ct []byte) (pt []byte) {
 	}
 	fmt.Printf("Key: %s", key)
 	return RepeatingXOR(ct, []byte(key))
+}
+
+/*
+func ECBEncrypt(key, pt []byte) ([]byte, error) {
+
+}
+*/
+
+func ECBDecrypt(key, ct []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	if len(ct) < aes.BlockSize {
+		panic("ciphertext too short")
+	}
+
+	// CBC mode always works in whole blocks.
+	if len(ct)%aes.BlockSize != 0 {
+		panic("ciphertext is not a multiple of the block size")
+	}
+
+	bs := block.BlockSize()
+	blocks := len(ct) / bs
+
+	for i := 0; i < blocks; i++ {
+		block.Decrypt(ct[bs*i:bs*(i+1)], ct[bs*i:bs*(i+1)])
+	}
+
+	return ct, nil
+
 }
