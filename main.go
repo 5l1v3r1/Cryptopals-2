@@ -247,12 +247,6 @@ func RepeatingKeyOracle(ct []byte) (pt []byte) {
 	return RepeatingXOR(ct, []byte(key))
 }
 
-/*
-func ECBEncrypt(key, pt []byte) ([]byte, error) {
-
-}
-*/
-
 func ECBDecrypt(key, ct []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -279,4 +273,18 @@ func ECBDecrypt(key, ct []byte) ([]byte, error) {
 
 	return ct, nil
 
+}
+
+func ECBDetectOracle(data []byte) bool {
+	l := len(data)
+	m := make(map[string]int)
+	for i := 0; i < l/16; i++ {
+		s := string(data[i*16 : (i+1)*16])
+		if m[s] == 1 {
+			return true
+		}
+		m[s] = 1
+	}
+
+	return false
 }

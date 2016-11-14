@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/hex"
+	"github.com/d1str0/pkcs7"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -111,4 +113,35 @@ func TestECBDecrypt(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	pt, _ := ECBDecrypt(key, data)
 	t.Logf("%s\n", string(pt))
+}
+
+func TestECBDetectOracle(t *testing.T) {
+	file, err := os.Open("challenge8.txt") // For read access.
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		data, _ := base64.StdEncoding.DecodeString(line)
+		ecb := ECBDetectOracle(data)
+		if ecb {
+			t.Logf("YES\n\n")
+			key := []byte("YELLOW SUBMARINE")
+			pt, _ := ECBDecrypt(key, data)
+			t.Logf("%s\n", string(pt))
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPKCS7(t *testing.T) {
+	k := []byte("YELLOW SUBMARINE")
+	p, _ := pkcs7.Pad(k, 20)
+	t.Logf("%s\n", strconv.Quote(string(p)))
 }
